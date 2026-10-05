@@ -64,12 +64,12 @@ const {
 const llm = new ChatOllama({
     model: config.llmModel,
     temperature: 0.2,
-    baseUrl: "http://localhost:11434"
+    baseUrl: process.env.OLLAMA_URL
 });
 
 const embeddings = new OllamaEmbeddings({
     model: config.embeddingModel,
-    baseUrl: "http://localhost:11434"
+    baseUrl: process.env.OLLAMA_URL
 });
 // OPENAI — deixar para o futuro
 // const {
