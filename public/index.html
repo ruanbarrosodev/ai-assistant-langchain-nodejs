@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Agente IA</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f2f4f7;
+    height: 100vh;
+}
+
+.app {
+    display: flex;
+    height: 100vh;
+}
+
+/* LATERAL */
+
+.sidebar {
+    width: 300px;
+    background: white;
+    border-right: 1px solid #ddd;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.sidebar h2 {
+    margin: 0 0 15px;
+}
+
+.campo {
+    margin-bottom: 12px;
+}
+
+.campo label {
+    display: block;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.campo input {
+    width: 100%;
+    padding: 9px;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+}
+
+.estado {
+    margin-top: 20px;
+}
+
+.estado pre {
+    background: #f5f5f5;
+    padding: 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    white-space: pre-wrap;
+}
+
+/* CHAT */
+
+.chat {
+    flex: 1;
+    height: 100vh;
+    min-width: 0;
+    background: #f2f4f7;
+}
+
+.chat-header {
+    height: 58px;
+    background: white;
+    border-bottom: 1px solid #ddd;
+    padding: 16px 25px;
+}
+
+.chat-header h1 {
+    margin: 0;
+    font-size: 20px;
+}
+
+/* HISTÓRICO */
+.historico {
+    height: calc(100vh - 123px);
+    overflow-y: auto;
+}
+
+.mensagem {
+    width: 100%;
+    padding: 5px;
+    margin: 0;
+    line-height: 1.4;
+}
+.mensagem {
+    display: inline-block;
+    width: fit-content;
+    width: 80%;
+    padding: 8px;
+    margin: 0;
+    line-height: 1.4;
+}
+.cliente, .ia{
+    display:block;
+}
+.cliente {
+    margin-left: auto;
+    text-align: right;
+    background: #d9fdd3;
+}
+.ia {
+    margin-right: auto;
+    text-align: left;
+    background: #ffffff;
+}
+
+.remetente {
+    margin: 0;
+    font-size: 11px;
+    color: #777;
+}
+/* ENTRADA */
+
+.entrada {
+    height: 65px;
+    background: white;
+    border-top: 1px solid #ddd;
+    padding: 10px 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.entrada input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 9px;
+    font-size: 15px;
+}
+
+.entrada button {
+    padding: 0 25px;
+    border: none;
+    border-radius: 9px;
+    background: #222;
+    color: white;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- =========================
+         LATERAL
+    ========================== -->
+
+    <aside class="sidebar">
+
+        <h2>Cliente</h2>
+
+        <div class="campo">
+            <label>Nome</label>
+            <input
+                id="nameClient"
+                type="text"
+                placeholder="Digite o nome"
+            >
+        </div>
+
+        <div class="campo">
+            <label>ID externo</label>
+            <input
+                id="idExterno"
+                type="text"
+                placeholder="Digite o ID"
+            >
+        </div>
+
+        <div class="estado">
+
+            <h2>Estado</h2>
+
+            <pre id="estado">
+Nenhum estado ainda.
+            </pre>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =========================
+         CHAT
+    ========================== -->
+
+    <main class="chat">
+
+        <header class="chat-header">
+
+            <h1>Agente IA</h1>
+
+        </header>
+
+
+        <div
+            id="historico"
+            class="historico"
+        >
+
+        </div>
+
+
+        <div class="entrada">
+
+            <input
+                id="mensagem"
+                type="text"
+                placeholder="Digite sua mensagem..."
+                onkeydown="if(event.key === 'Enter') enviar()"
+            >
+
+            <button onclick="enviar()">
+                Enviar
+            </button>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script>
+
+async function enviar() {
+
+    const nameClient =
+        document.getElementById("nameClient").value;
+
+    const idExterno =
+        document.getElementById("idExterno").value;
+
+    const mensagemInput =
+        document.getElementById("mensagem");
+
+    const mensagem =
+        mensagemInput.value.trim();
+
+
+    if (!nameClient || !idExterno || !mensagem) {
+        alert("Preencha nome, ID e mensagem.");
+        return;
+    }
+
+
+    // Mostra mensagem do cliente
+
+    adicionarMensagem(
+        "Você",
+        mensagem,
+        "cliente"
+    );
+
+
+    mensagemInput.value = "";
+
+
+    try {
+
+        const response = await fetch("/chat", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+
+                idExterno,
+                nameClient,
+                mensagem
+
+            })
+
+        });
+
+
+        const data = await response.json();
+
+
+        // Mostra resposta da IA
+
+        adicionarMensagem(
+            "Assistente de Atendimento",
+            data.resposta,
+            "ia"
+        );
+
+
+        // Atualiza estado
+
+        if (data.estado) {
+
+            document.getElementById("estado").innerText =
+                JSON.stringify(
+                    data.estado,
+                    null,
+                    2
+                );
+
+        }
+
+    } catch (error) {
+
+        adicionarMensagem(
+            "Sistema",
+            "Erro ao comunicar com o servidor.",
+            "ia"
+        );
+
+        console.error(error);
+
+    }
+
+}
+
+
+function adicionarMensagem(
+    remetente,
+    texto,
+    classe
+) {
+
+    const historico =
+        document.getElementById("historico");
+
+
+    const mensagem =
+        document.createElement("div");
+
+    mensagem.className =
+        `mensagem ${classe}`;
+
+
+    mensagem.innerHTML = `
+
+        <div class="remetente">
+            ${remetente}
+        </div>
+
+        <div>
+            ${texto}
+        </div>
+
+    `;
+
+
+    historico.appendChild(mensagem);
+
+
+    // Sempre desce para a última mensagem
+
+    historico.scrollTop =
+        historico.scrollHeight;
+
+}
+
+</script>
+
+</body>
+
+</html>
